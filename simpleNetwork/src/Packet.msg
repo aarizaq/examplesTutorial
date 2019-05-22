@@ -7,6 +7,10 @@
 // `license' for details on this and other legal matters.
 //
 
+class OutputPort extends cObject {
+    int port;    
+}
+
 
 //
 // Represents a packet in the network.

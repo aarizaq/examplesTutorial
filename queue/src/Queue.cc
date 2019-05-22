@@ -34,6 +34,50 @@ void Queue::initialize()
     WATCH(numSend);
 }
 
+
+#ifdef SENDEND
+//
+// The packet arrives to the next module when the latest bit should arrive
+//
+void Queue::handleMessage(cMessage *msg)
+{
+    // TODO - Generated method body
+    if (msg == timerSent) {
+        auto pkt = check_and_cast<cPacket *>(msg->removeControlInfo());
+        send(pkt,"out");
+    }
+    if (msg != timerSent && timerSent->isScheduled()) {
+        numRec++;
+        auto pkt = check_and_cast<cPacket *>(msg);
+        queue.push_back(pkt);
+    }
+    else if (msg != timerSent && queue.empty() && !timerSent->isScheduled()) {
+        // sent immediately, queue is empty
+        // compute time
+        int serviceRate = par("serviceRate");
+        auto pkt = check_and_cast<cPacket *>(msg);
+        double t = (double)pkt->getBitLength()/(double)serviceRate;
+        timerSent->setControlInfo(pkt);
+        scheduleAt(simTime()+t, timerSent);
+        numRec++;
+        numSend++;
+    }
+    else if (msg == timerSent && !queue.empty()) {
+        auto pkt = queue.front();
+        queue.pop_front();
+        int serviceRate = par("serviceRate");
+        double t = (double)pkt->getBitLength()/(double)serviceRate;
+        scheduleAt(simTime()+t, timerSent);
+        numSend++;
+    }
+}
+
+#else
+
+//
+// The packet arrives to the next module when the first bit should arrive
+//
+
 void Queue::handleMessage(cMessage *msg)
 {
     // TODO - Generated method body
@@ -63,3 +107,4 @@ void Queue::handleMessage(cMessage *msg)
         numSend++;
     }
 }
+#endif

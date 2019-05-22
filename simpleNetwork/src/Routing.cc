@@ -98,16 +98,30 @@ void Routing::handleMessage(cMessage *msg)
         emit(outputIfSignal, -1);  // -1: local
         return;
     }
+    int outGateIndex = -1;
 
-    RoutingTable::iterator it = rtable.find(destAddr);
-    if (it == rtable.end()) {
-        EV << "address " << destAddr << " unreachable, discarding packet " << pk->getName() << endl;
-        emit(dropSignal, (long)pk->getByteLength());
-        delete pk;
-        return;
+    // application can force the output gate with independence of the routing table
+    auto controlInfo = pk->removeControlInfo();
+    if (controlInfo != nullptr) {
+        auto outPort = dynamic_cast<OutputPort *>(controlInfo);
+        if (outPort != nullptr && outPort->getPort() < outputQueues.size())
+            outGateIndex = outPort->getPort();
+        delete controlInfo;
     }
 
-    int outGateIndex = (*it).second;
+    // no valid gate, search in the routing table
+    if (outGateIndex == -1) {
+        RoutingTable::iterator it = rtable.find(destAddr);
+        if (it == rtable.end()) {
+            EV << "address " << destAddr << " unreachable, discarding packet "
+                      << pk->getName() << endl;
+            emit(dropSignal, (long) pk->getByteLength());
+            delete pk;
+            return;
+        }
+        outGateIndex = (*it).second;
+    }
+
     EV << "forwarding packet " << pk->getName() << " on gate index " << outGateIndex << endl;
     pk->setHopCount(pk->getHopCount()+1);
     emit(outputIfSignal, outGateIndex);
