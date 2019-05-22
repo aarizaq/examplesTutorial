@@ -1,0 +1,3 @@
+package queue;
+
+@license(LGPL);
