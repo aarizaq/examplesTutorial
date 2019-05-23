@@ -41,7 +41,6 @@ void Queue::initialize()
 //
 void Queue::handleMessage(cMessage *msg)
 {
-    // TODO - Generated method body
     if (msg == timerSent) {
         auto pkt = check_and_cast<cPacket *>(msg->removeControlInfo());
         send(pkt,"out");
@@ -80,7 +79,6 @@ void Queue::handleMessage(cMessage *msg)
 
 void Queue::handleMessage(cMessage *msg)
 {
-    // TODO - Generated method body
     if (msg != timerSent && timerSent->isScheduled()) {
         numRec++;
         auto pkt = check_and_cast<cPacket *>(msg);
